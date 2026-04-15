@@ -2,6 +2,7 @@
 Query tab UI component.
 """
 
+import html
 import streamlit as st
 from services.llm_service import GroqService
 from config import AppConfig
@@ -12,10 +13,10 @@ def render_query_tab():
     if not st.session_state.chunks:
         st.info("👆 Go to **Ingest** tab first to upload a document and build the index.")
         return
-    
+
     # Display info pills
     st.markdown(f"""
-    <span class="info-pill">📄 {st.session_state.doc_name}</span>
+    <span class="info-pill">📄 {html.escape(str(st.session_state.doc_name))}</span>
     <span class="info-pill">🧩 {len(st.session_state.chunks)} chunks indexed</span>
     <span class="info-pill">🔑 {len(st.session_state.bm25.index)} unique terms</span>
     <span class="info-pill">🤖 {st.session_state.get('model', AppConfig.DEFAULT_MODEL)}</span>
@@ -31,7 +32,7 @@ def render_query_tab():
         if not AppConfig.is_api_key_configured():
             st.error("No API key found. Add `GROQ_API_KEY=gsk_...` to your `.env` file and restart.")
             return
-        
+
         bm25 = st.session_state.bm25
         top_k = st.session_state.get("top_k", AppConfig.DEFAULT_TOP_K)
         model = st.session_state.get("model", AppConfig.DEFAULT_MODEL)
@@ -51,12 +52,12 @@ def render_query_tab():
             st.markdown(f"<span class='step-badge'>STEP 1</span> **BM25 Retrieved Chunks**", unsafe_allow_html=True)
             max_score = top_results[0][0] if top_results else 1
             for rank, (score, idx) in enumerate(top_results):
-                pct = int((score / max_score) * 100)
+                pct = int((score / max_score) * 100) if max_score > 0 else 0
                 chunk_preview = st.session_state.chunks[idx]
                 st.markdown(f"""
                 <div class="chunk-card">
                     <div class="chunk-score">#{rank+1} · BM25: {score:.3f} · Match: {pct}%</div>
-                    {chunk_preview[:250]}{'...' if len(chunk_preview) > 250 else ''}
+                    {html.escape(chunk_preview[:250])}{'...' if len(chunk_preview) > 250 else ''}
                     <div class="chunk-meta">chunk #{idx} · {len(chunk_preview.split())}w</div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -77,7 +78,8 @@ def render_query_tab():
                     answer = result["answer"]
                     tokens_used = result["tokens_used"]
 
-                    st.markdown(f'<div class="answer-box">{answer}</div>', unsafe_allow_html=True)
+                    # Use st.markdown without unsafe_allow_html for answer (safer rendering)
+                    st.markdown(f'<div class="answer-box">{html.escape(answer)}</div>', unsafe_allow_html=True)
                     st.caption(f"📊 Tokens: {tokens_used} · Model: {model} · Chunks: {len(top_results)}")
 
                     # Save to history
@@ -96,7 +98,8 @@ def render_query_tab():
         st.markdown("---")
         with st.expander(f"📜 Query History ({len(st.session_state.qa_history)} questions)"):
             for i, item in enumerate(reversed(st.session_state.qa_history)):
-                st.markdown(f"**Q{len(st.session_state.qa_history)-i}:** {item['q']}")
-                st.markdown(f"<div style='color:#9080ff; font-size:0.8rem; margin-bottom:0.5rem'>{item['a'][:200]}...</div>", unsafe_allow_html=True)
+                q_num = len(st.session_state.qa_history) - i
+                st.markdown(f"**Q{q_num}:** {html.escape(item['q'])}")
+                st.markdown(f"<div style='color:#9080ff; font-size:0.8rem; margin-bottom:0.5rem'>{html.escape(item['a'][:200])}...</div>", unsafe_allow_html=True)
                 st.caption(f"BM25 top score: {item['top_score']:.3f} · {item['chunks']} chunks · {item.get('model', '')}")
                 st.markdown("---")
