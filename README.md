@@ -127,12 +127,12 @@ flowchart TD
 
     C --> D{t in index?}
     D -->|No| E[Skip term]
-    D -->|Yes| F[Calculate IDF<br/>log(N - n_t + 0.5 / n_t + 0.5 + 1)]
+    D -->|Yes| F["Calculate IDF<br/>log(N - n_t + 0.5 / n_t + 0.5 + 1)"]
 
     F --> G[For each doc containing t]
-    G --> H[Calculate TF<br/>freq * k1 + 1 / freq + k1*1-b+b*dl/avgdl]
+    G --> H["Calculate TF<br/>freq * k1 + 1 / freq + k1*1-b+b*dl/avgdl"]
 
-    H --> I[Score += IDF * TF]
+    H --> I["Score += IDF * TF"]
     I --> J[Next doc]
     J --> G
 
