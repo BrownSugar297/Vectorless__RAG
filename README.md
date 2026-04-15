@@ -27,7 +27,7 @@ flowchart LR
     F -->|Top-K Chunks| G[Context Assembly]
     G -->|Prompt| H[Groq LLM]
     H -->|Answer| A
-    
+
     style A fill:#7c6dfa,color:#fff
     style F fill:#ff6b6b,color:#fff
     style H fill:#4caf50,color:#fff
@@ -37,18 +37,18 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A[📄 Document\nTXT/MD/PDF] --> B[chunk_text\nSplit into 300-word\noverlapping windows]
-    B --> C[BM25.__init__\nBuild inverted index\nCompute avgdl]
-    C --> D[(📊 BM25 Index\nTerm → {doc_id: freq})]
-    
-    E[💬 User Query] --> F[BM25.score\nRank chunks by\nrelevance]
+    A[Document<br/>TXT/MD/PDF] --> B[chunk_text<br/>Split into 300-word<br/>overlapping windows]
+    B --> C[BM25.__init__<br/>Build inverted index<br/>Compute avgdl]
+    C --> D[(BM25 Index<br/>Term to doc_id freq mapping)]
+
+    E[User Query] --> F[BM25.score<br/>Rank chunks by<br/>relevance]
     D --> F
-    F --> G[Top-K Chunks\nRetrieval]
-    
-    G --> H[Build Prompt\nInject chunks as context]
-    H --> I[🤖 Groq LLM\nllama-3.3-70b]
-    I --> J[✅ Grounded Answer\nWith source citations]
-    
+    F --> G[Top-K Chunks<br/>Retrieval]
+
+    G --> H[Build Prompt<br/>Inject chunks as context]
+    H --> I[Groq LLM<br/>llama-3.3-70b]
+    I --> J[Grounded Answer<br/>With source citations]
+
     style A fill:#7c6dfa,color:#fff
     style E fill:#ff6b6b,color:#fff
     style D fill:#ffd93d,color:#000
@@ -65,29 +65,29 @@ sequenceDiagram
     participant TP as Text Processor
     participant BM as BM25 Engine
     participant GS as Groq Service
-    
+
     U->>S: 1. Upload document (TXT/MD/PDF)
     S->>TP: extract_text()
     TP-->>S: Raw text
-    
+
     U->>S: 2. Click "Build Index"
     S->>TP: chunk_text()
     TP-->>S: List of chunks
     S->>BM: BM25(chunks, k1, b)
     BM->>BM: Build inverted index
     BM-->>S: BM25 instance
-    
+
     U->>S: 3. Ask question
     S->>BM: bm25.score(query)
     BM->>BM: Calculate BM25 scores
     BM-->>S: Ranked chunks (Top-K)
     S->>S: Display retrieved chunks
-    
+
     S->>GS: generate_answer(query, chunks)
     GS->>GS: Build prompt with context
     GS-->>S: LLM answer
     S-->>U: Display answer
-    
+
     Note over U,GS: All BM25 scores shown for transparency
 ```
 
@@ -95,23 +95,23 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    A[app.py\nOrchestrator] --> B[config.py\nConfiguration]
-    A --> C[ui/\nUI Components]
-    A --> D[core/\nRAG Engine]
-    A --> E[services/\nLLM Service]
-    
+    A[app.py<br/>Orchestrator] --> B[config.py<br/>Configuration]
+    A --> C[ui<br/>UI Components]
+    A --> D[core<br/>RAG Engine]
+    A --> E[services<br/>LLM Service]
+
     C --> C1[styles.py]
     C --> C2[header.py]
     C --> C3[sidebar.py]
     C --> C4[ingest_tab.py]
     C --> C5[query_tab.py]
     C --> C6[learn_tab.py]
-    
+
     D --> D1[bm25.py]
     D --> D2[text_processor.py]
-    
+
     E --> E1[llm_service.py]
-    
+
     style A fill:#7c6dfa,color:#fff
     style D fill:#ff6b6b,color:#fff
     style E fill:#4caf50,color:#fff
@@ -122,25 +122,25 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A[Query Text] --> B[Tokenize\nLowercase + remove stopwords]
+    A[Query Text] --> B[Tokenize<br/>Lowercase + remove stopwords]
     B --> C[For each term t]
-    
+
     C --> D{t in index?}
     D -->|No| E[Skip term]
-    D -->|Yes| F[Calculate IDF\nlog(N - n_t + 0.5 / n_t + 0.5 + 1)]
-    
+    D -->|Yes| F[Calculate IDF<br/>log(N - n_t + 0.5 / n_t + 0.5 + 1)]
+
     F --> G[For each doc containing t]
-    G --> H[Calculate TF\nfreq * k1 + 1 / freq + k1*1-b+b*dl/avgdl]
-    
+    G --> H[Calculate TF<br/>freq * k1 + 1 / freq + k1*1-b+b*dl/avgdl]
+
     H --> I[Score += IDF * TF]
     I --> J[Next doc]
     J --> G
-    
+
     E --> K{More terms?}
     K -->|Yes| C
     K -->|No| L[Rank all docs by score]
     L --> M[Return Top-K chunks]
-    
+
     style A fill:#7c6dfa,color:#fff
     style M fill:#4caf50,color:#fff
     style F fill:#ffd93d,color:#000
